@@ -9,6 +9,8 @@ A RESTful API for managing products, categories, and subcategories with advanced
 - Node.js
 - Express.js
 - MongoDB (Mongoose ODM)
+- Cloudinary (Image storage & optimization)
+- Multer + Multer-Storage-Cloudinary (File upload)
 - CORS enabled
 - Morgan (logging)
 
@@ -203,42 +205,58 @@ GET /api/products/:id
 
 ```
 POST /api/products
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-  "name": "iPhone 15 Pro",
-  "description": "Latest Apple smartphone with advanced features",
-  "price": 999.99,
-  "images": ["url1", "url2", "url3"],
-  "categoryId": "category_object_id",
-  "subcategoryId": "subcategory_object_id",
-  "stock": 100
-}
+FormData:
+- name: "iPhone 15 Pro"
+- description: "Latest Apple smartphone with advanced features"
+- price: 999.99
+- images: [File, File, File] (up to 10 image files)
+- categoryId: "category_object_id"
+- subcategoryId: "subcategory_object_id"
+- stock: 100
 ```
+
+**Image Upload Features:**
+
+- Supports multiple image uploads (up to 10 files)
+- Direct upload to Cloudinary with automatic optimization
+- Image compression: Reduces file size by ~83% (e.g., 285 KB → 48.11 KB)
+- Automatic format conversion to WebP for better performance
+- Fixed width: 1000px with auto height to maintain aspect ratio
+- Quality: Auto-optimized for web delivery
 
 #### Update product
 
 ```
 PUT /api/products/:id
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-  "name": "Updated Product Name",
-  "description": "Updated description",
-  "price": 1099.99,
-  "images": ["url1", "url2"],
-  "categoryId": "category_object_id",
-  "subcategoryId": "subcategory_object_id",
-  "stock": 50,
-  "isActive": true
-}
+FormData:
+- name: "Updated Product Name"
+- description: "Updated description"
+- price: 1099.99
+- images: [File, File] (optional new image files)
+- categoryId: "category_object_id"
+- subcategoryId: "subcategory_object_id"
+- stock: 50
+- isActive: true
+- keepExistingImages: true/false (whether to keep existing images)
 ```
+
+**Update Behavior:**
+
+- If `keepExistingImages` is `true` and new images are uploaded, they are added to existing images
+- If `keepExistingImages` is `false` or not specified, old images are replaced with new ones
+- Old images are automatically deleted from Cloudinary when replaced
 
 #### Delete product
 
 ```
 DELETE /api/products/:id
 ```
+
+**Note:** All product images are automatically deleted from Cloudinary when a product is removed.
 
 ---
 
@@ -287,15 +305,19 @@ DELETE /api/products/:id
 
 ## Features
 
-✅ CRUD operations for Categories, Subcategories, and Products
-✅ Advanced search across multiple fields
-✅ Filter by category and subcategory
-✅ Backend-powered pagination
-✅ Populated references in responses
-✅ Input validation
-✅ Error handling
-✅ Clean MVC architecture
-✅ RESTful API design
+✅ CRUD operations for Categories, Subcategories, and Products  
+✅ Advanced search across multiple fields  
+✅ Filter by category and subcategory  
+✅ Backend-powered pagination  
+✅ Populated references in responses  
+✅ Input validation  
+✅ Error handling  
+✅ Clean MVC architecture  
+✅ RESTful API design  
+✅ **Cloudinary Image Optimization** - Automatic image compression (83% size reduction)  
+✅ **Multi-image Upload** - Support for up to 10 images per product  
+✅ **Auto Format Conversion** - WebP format for optimal web performance  
+✅ **Optimized API Performance** - Fast image delivery with CDN caching
 
 ---
 
