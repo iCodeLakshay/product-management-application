@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { AiOutlineEye } from "react-icons/ai";
 
 import { Product } from "@/types";
+import ProductDetailsModal from "./ProductDetailsModal";
 
 interface ProductCardProps {
   product: Product;
@@ -9,6 +11,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
@@ -88,10 +91,24 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <div className="flex items-center justify-between">
           <span className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${product.price.toFixed(2)}
+            ₹{product.price.toFixed(2)}
           </span>
+          <button
+            onClick={() => setIsDetailsModalOpen(true)}
+            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 transition-colors"
+          >
+            <AiOutlineEye className="w-4 h-4" />
+            Details
+          </button>
         </div>
       </div>
+
+      {/* Product Details Modal */}
+      <ProductDetailsModal
+        product={product}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
     </div>
   );
 }

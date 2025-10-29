@@ -97,7 +97,7 @@ const transformProduct = (backendProduct: BackendProduct): Product => ({
   images:
     backendProduct.images.length > 0
       ? backendProduct.images
-      : [`https://picsum.photos/seed/${backendProduct._id}/600/400`],
+      : [`https://placehold.co/600x400`],
   category: {
     id: backendProduct.categoryId._id,
     name: backendProduct.categoryId.name,

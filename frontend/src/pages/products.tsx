@@ -27,6 +27,7 @@ export default function ProductListPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -82,7 +83,7 @@ export default function ProductListPage() {
           categoryId: selectedCategory,
           subcategoryId: selectedSubcategory,
           page: currentPage,
-          limit: 50,
+          limit: itemsPerPage,
         });
 
         setProducts(response.data);
@@ -96,7 +97,13 @@ export default function ProductListPage() {
     };
 
     loadProducts();
-  }, [searchTerm, selectedCategory, selectedSubcategory, currentPage]);
+  }, [
+    searchTerm,
+    selectedCategory,
+    selectedSubcategory,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   // Handle search with useCallback to prevent unnecessary re-renders
   const handleSearch = useCallback((term: string) => {
@@ -120,6 +127,12 @@ export default function ProductListPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   // Clear all filters
@@ -185,17 +198,42 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {/* Results Info */}
-        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          {loading ? (
-            <span>Loading products...</span>
-          ) : (
-            <span>
-              Showing {products.length === 0 ? 0 : (currentPage - 1) * 50 + 1} -{" "}
-              {Math.min(currentPage * 50, pagination.totalItems)} of{" "}
-              {pagination.totalItems} products
-            </span>
-          )}
+        {/* Results Info and Items Per Page Selector */}
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {loading ? (
+              <span>Loading products...</span>
+            ) : (
+              <span>
+                Showing{" "}
+                {products.length === 0
+                  ? 0
+                  : (currentPage - 1) * itemsPerPage + 1}{" "}
+                - {Math.min(currentPage * itemsPerPage, pagination.totalItems)}{" "}
+                of {pagination.totalItems} products
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="itemsPerPage"
+              className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap"
+            >
+              Products per page:
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
 
         {/* Loading State */}
