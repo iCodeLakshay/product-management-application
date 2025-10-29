@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 
 import { Product } from "@/types";
 
@@ -37,14 +38,14 @@ export default function ProductCard({ product }: ProductCardProps) {
               className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
               onClick={prevImage}
             >
-              ‹
+              <IoChevronBack className="w-5 h-5" />
             </button>
             <button
               aria-label="Next image"
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
               onClick={nextImage}
             >
-              ›
+              <IoChevronForward className="w-5 h-5" />
             </button>
 
             {/* Image Indicators */}

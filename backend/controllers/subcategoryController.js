@@ -1,9 +1,6 @@
 const Subcategory = require("../models/Subcategory");
 const Category = require("../models/Category");
 
-// @desc    Get all subcategories
-// @route   GET /api/subcategories
-// @access  Public
 const getSubcategories = async (req, res) => {
   try {
     const { categoryId } = req.query;
@@ -31,9 +28,6 @@ const getSubcategories = async (req, res) => {
   }
 };
 
-// @desc    Get single subcategory
-// @route   GET /api/subcategories/:id
-// @access  Public
 const getSubcategoryById = async (req, res) => {
   try {
     const subcategory = await Subcategory.findById(req.params.id).populate(
@@ -61,9 +55,6 @@ const getSubcategoryById = async (req, res) => {
   }
 };
 
-// @desc    Create new subcategory
-// @route   POST /api/subcategories
-// @access  Public
 const createSubcategory = async (req, res) => {
   try {
     const { name, description, categoryId } = req.body;
@@ -109,9 +100,6 @@ const createSubcategory = async (req, res) => {
   }
 };
 
-// @desc    Update subcategory
-// @route   PUT /api/subcategories/:id
-// @access  Public
 const updateSubcategory = async (req, res) => {
   try {
     const { name, description, categoryId, isActive } = req.body;
@@ -172,9 +160,6 @@ const updateSubcategory = async (req, res) => {
   }
 };
 
-// @desc    Delete subcategory
-// @route   DELETE /api/subcategories/:id
-// @access  Public
 const deleteSubcategory = async (req, res) => {
   try {
     const subcategory = await Subcategory.findById(req.params.id);
@@ -201,10 +186,119 @@ const deleteSubcategory = async (req, res) => {
   }
 };
 
+const bulkImportSubcategories = async (req, res) => {
+  try {
+    const { subcategories } = req.body;
+
+    if (!subcategories || !Array.isArray(subcategories)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide an array of subcategories",
+      });
+    }
+
+    if (subcategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Subcategories array cannot be empty",
+      });
+    }
+
+    const results = {
+      successful: [],
+      failed: [],
+      skipped: [],
+    };
+
+    for (const subcategoryData of subcategories) {
+      try {
+        const { name, description, categoryId, isActive } = subcategoryData;
+
+        if (!name) {
+          results.failed.push({
+            data: subcategoryData,
+            reason: "Name is required",
+          });
+          continue;
+        }
+
+        if (!categoryId) {
+          results.failed.push({
+            data: subcategoryData,
+            reason: "Category ID is required",
+          });
+          continue;
+        }
+
+        // Check if category exists
+        const category = await Category.findById(categoryId);
+        if (!category) {
+          results.failed.push({
+            data: subcategoryData,
+            reason: "Category not found",
+          });
+          continue;
+        }
+
+        // Check if subcategory already exists in this category
+        const existingSubcategory = await Subcategory.findOne({
+          name,
+          categoryId,
+        });
+        if (existingSubcategory) {
+          results.skipped.push({
+            name,
+            categoryId,
+            reason: "Subcategory already exists in this category",
+          });
+          continue;
+        }
+
+        const subcategory = await Subcategory.create({
+          name,
+          description: description || "",
+          categoryId,
+          isActive: isActive !== undefined ? isActive : true,
+        });
+
+        const populatedSubcategory = await Subcategory.findById(
+          subcategory._id
+        ).populate("categoryId", "name");
+
+        results.successful.push(populatedSubcategory);
+      } catch (error) {
+        results.failed.push({
+          data: subcategoryData,
+          reason: error.message,
+        });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Bulk import completed",
+      summary: {
+        total: subcategories.length,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        skipped: results.skipped.length,
+      },
+      results,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getSubcategories,
   getSubcategoryById,
   createSubcategory,
   updateSubcategory,
   deleteSubcategory,
+  bulkImportSubcategories,
 };

@@ -6,9 +6,12 @@ const {
   createSubcategory,
   updateSubcategory,
   deleteSubcategory,
+  bulkImportSubcategories,
 } = require("../controllers/subcategoryController");
 
 router.route("/").get(getSubcategories).post(createSubcategory);
+
+router.route("/bulk-import").post(bulkImportSubcategories);
 
 router
   .route("/:id")

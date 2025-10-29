@@ -6,9 +6,12 @@ const {
   createCategory,
   updateCategory,
   deleteCategory,
+  bulkImportCategories,
 } = require("../controllers/categoryController");
 
 router.route("/").get(getCategories).post(createCategory);
+
+router.route("/bulk-import").post(bulkImportCategories);
 
 router
   .route("/:id")

@@ -1,10 +1,8 @@
 const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Subcategory = require("../models/Subcategory");
+const { deleteMultipleImages } = require("../config/cloudinary");
 
-// @desc    Get all products with pagination, search, and filters
-// @route   GET /api/products
-// @access  Public
 const getProducts = async (req, res) => {
   try {
     const {
@@ -116,9 +114,6 @@ const getProducts = async (req, res) => {
   }
 };
 
-// @desc    Get single product
-// @route   GET /api/products/:id
-// @access  Public
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -145,20 +140,20 @@ const getProductById = async (req, res) => {
   }
 };
 
-// @desc    Create new product
-// @route   POST /api/products
-// @access  Public
 const createProduct = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      price,
-      images,
-      categoryId,
-      subcategoryId,
-      stock,
-    } = req.body;
+    const { name, description, price, categoryId, subcategoryId, stock } =
+      req.body;
+
+    // Get uploaded images from Cloudinary
+    const images = req.files ? req.files.map((file) => file.path) : [];
+
+    if (images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one product image is required",
+      });
+    }
 
     // Validate category exists
     const category = await Category.findById(categoryId);
@@ -212,20 +207,17 @@ const createProduct = async (req, res) => {
   }
 };
 
-// @desc    Update product
-// @route   PUT /api/products/:id
-// @access  Public
 const updateProduct = async (req, res) => {
   try {
     const {
       name,
       description,
       price,
-      images,
       categoryId,
       subcategoryId,
       stock,
       isActive,
+      keepExistingImages,
     } = req.body;
 
     let product = await Product.findById(req.params.id);
@@ -235,6 +227,35 @@ const updateProduct = async (req, res) => {
         success: false,
         message: "Product not found",
       });
+    }
+
+    // Handle image updates
+    let images = product.images; // Keep existing images by default
+
+    // If new images are uploaded
+    if (req.files && req.files.length > 0) {
+      const newImages = req.files.map((file) => file.path);
+
+      // If keepExistingImages is true, append new images to existing ones
+      if (keepExistingImages === "true") {
+        images = [...product.images, ...newImages];
+      } else {
+        // Otherwise, delete old images from Cloudinary and replace with new ones
+        if (product.images.length > 0) {
+          const publicIds = product.images.map((url) => {
+            const parts = url.split("/");
+            const filename = parts[parts.length - 1];
+            return `products/${filename.split(".")[0]}`;
+          });
+
+          try {
+            await deleteMultipleImages(publicIds);
+          } catch (error) {
+            console.error("Error deleting old images:", error);
+          }
+        }
+        images = newImages;
+      }
     }
 
     // Validate category if being updated
@@ -297,9 +318,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// @desc    Delete product
-// @route   DELETE /api/products/:id
-// @access  Public
 const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -309,6 +327,21 @@ const deleteProduct = async (req, res) => {
         success: false,
         message: "Product not found",
       });
+    }
+
+    // Delete images from Cloudinary
+    if (product.images.length > 0) {
+      const publicIds = product.images.map((url) => {
+        const parts = url.split("/");
+        const filename = parts[parts.length - 1];
+        return `products/${filename.split(".")[0]}`;
+      });
+
+      try {
+        await deleteMultipleImages(publicIds);
+      } catch (error) {
+        console.error("Error deleting images from Cloudinary:", error);
+      }
     }
 
     await product.deleteOne();
@@ -326,10 +359,159 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const bulkImportProducts = async (req, res) => {
+  try {
+    const { products } = req.body;
+
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide an array of products",
+      });
+    }
+
+    if (products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Products array cannot be empty",
+      });
+    }
+
+    const results = {
+      successful: [],
+      failed: [],
+      skipped: [],
+    };
+
+    for (const productData of products) {
+      try {
+        const {
+          name,
+          description,
+          price,
+          images,
+          categoryId,
+          subcategoryId,
+          stock,
+          isActive,
+        } = productData;
+
+        if (!name) {
+          results.failed.push({
+            data: productData,
+            reason: "Name is required",
+          });
+          continue;
+        }
+
+        if (!categoryId) {
+          results.failed.push({
+            data: productData,
+            reason: "Category ID is required",
+          });
+          continue;
+        }
+
+        if (!subcategoryId) {
+          results.failed.push({
+            data: productData,
+            reason: "Subcategory ID is required",
+          });
+          continue;
+        }
+
+        // Validate category exists
+        const category = await Category.findById(categoryId);
+        if (!category) {
+          results.failed.push({
+            data: productData,
+            reason: "Category not found",
+          });
+          continue;
+        }
+
+        // Validate subcategory exists and belongs to the category
+        const subcategory = await Subcategory.findById(subcategoryId);
+        if (!subcategory) {
+          results.failed.push({
+            data: productData,
+            reason: "Subcategory not found",
+          });
+          continue;
+        }
+
+        if (subcategory.categoryId.toString() !== categoryId) {
+          results.failed.push({
+            data: productData,
+            reason: "Subcategory does not belong to the specified category",
+          });
+          continue;
+        }
+
+        // Check if product already exists
+        const existingProduct = await Product.findOne({
+          name,
+          categoryId,
+          subcategoryId,
+        });
+        if (existingProduct) {
+          results.skipped.push({
+            name,
+            reason:
+              "Product with same name already exists in this category/subcategory",
+          });
+          continue;
+        }
+
+        const product = await Product.create({
+          name,
+          description: description || "",
+          price: price || 0,
+          images: images || [],
+          categoryId,
+          subcategoryId,
+          stock: stock || 0,
+          isActive: isActive !== undefined ? isActive : true,
+        });
+
+        const populatedProduct = await Product.findById(product._id)
+          .populate("categoryId", "name description")
+          .populate("subcategoryId", "name description");
+
+        results.successful.push(populatedProduct);
+      } catch (error) {
+        results.failed.push({
+          data: productData,
+          reason: error.message,
+        });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Bulk import completed",
+      summary: {
+        total: products.length,
+        successful: results.successful.length,
+        failed: results.failed.length,
+        skipped: results.skipped.length,
+      },
+      results,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  bulkImportProducts,
 };

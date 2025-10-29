@@ -1,3 +1,4 @@
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { PaginationInfo } from "@/types";
 
 interface PaginationProps {
@@ -57,11 +58,12 @@ export default function Pagination({
       {/* Previous Button */}
       <button
         aria-label="Previous page"
-        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
+        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
       >
-        Previous
+        <IoChevronBack className="w-4 h-4" />
+        <span className="hidden sm:inline">Previous</span>
       </button>
 
       {/* Page Numbers */}
@@ -104,11 +106,12 @@ export default function Pagination({
       {/* Next Button */}
       <button
         aria-label="Next page"
-        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
+        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
       >
-        Next
+        <span className="hidden sm:inline">Next</span>
+        <IoChevronForward className="w-4 h-4" />
       </button>
     </div>
   );

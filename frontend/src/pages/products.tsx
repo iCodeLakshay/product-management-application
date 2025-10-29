@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { MdDashboard } from "react-icons/md";
+import { BiPackage } from "react-icons/bi";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { Product, Category, Subcategory, PaginationInfo } from "@/types";
 import {
@@ -13,6 +17,7 @@ import Pagination from "@/components/Pagination";
 import DefaultLayout from "@/layouts/default";
 
 export default function ProductListPage() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -27,7 +32,7 @@ export default function ProductListPage() {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 50,
+    itemsPerPage: 10,
   });
 
   const [loading, setLoading] = useState(false);
@@ -132,13 +137,22 @@ export default function ProductListPage() {
     <DefaultLayout>
       <div className="w-full py-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Product Catalog
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Browse our collection of {pagination.totalItems} products
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              Product Catalog
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Browse our collection of {pagination.totalItems} products
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <MdDashboard className="w-5 h-5" />
+            Manage Content
+          </button>
         </div>
 
         {/* Search and Filters */}
@@ -187,7 +201,7 @@ export default function ProductListPage() {
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+            <AiOutlineLoading3Quarters className="animate-spin h-12 w-12 text-blue-600" />
           </div>
         )}
 
@@ -201,19 +215,7 @@ export default function ProductListPage() {
         {/* Empty State */}
         {!loading && !error && products.length === 0 && (
           <div className="text-center py-12">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-              />
-            </svg>
+            <BiPackage className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
               No Products Found
             </h3>
